@@ -42,16 +42,17 @@
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│                 Claude Code (CLI)                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐ │
-│  │ ppio-ui-skill│  │ Pencil MCP   │  │ Playwright MCP│ │
-│  │ 设计系统查询  │  │ 设计稿读写    │  │ 页面截图参考  │ │
-│  └──────┬───────┘  └──────┬───────┘  └───────┬───────┘ │
-│         │                 │                   │         │
-│         ▼                 ▼                   ▼         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │        AI 智能体（分析、设计、验证循环）          │   │
-│  └─────────────────────────────────────────────────┘   │
+│                   Claude Code (CLI)                      │
+│  ┌──────────────────┐  ┌──────────┐  ┌───────────────┐ │
+│  │  ppio-ui-skill   │  │Pencil MCP│  │Playwright MCP │ │
+│  │ 双产品设计系统    │  │设计稿读写 │  │页面截图参考   │ │
+│  │ BM25搜索引擎     │  │          │  │              │ │
+│  │ Token同步/验证   │  │          │  │              │ │
+│  └──────┬───────────┘  └────┬─────┘  └──────┬───────┘ │
+│         │                   │                │         │
+│  ┌──────▼───────────────────▼────────────────▼───────┐ │
+│  │        AI 智能体（分析、设计、验证循环）            │ │
+│  └───────────────────────────────────────────────────┘ │
 └────────────────────────┬────────────────────────────────┘
                          │
                          ▼
@@ -61,6 +62,43 @@
 │  提交方式: git commit → git push origin main            │
 └─────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Slide 3.5: ppio-ui-skill —— 双产品设计系统架构
+
+### 核心改造（refactor/dual-design-system 分支）
+**13 个 commit | +11,470 行 | 126 个文件**
+
+### 数据架构
+```
+ppio-ui-skill/data/
+├── shared/              ← 产品无关（charts, landing, ux, icons, react, web）
+│   ├── charts.csv, landing.csv, ux-guidelines.csv ...
+│   ├── ui-reasoning.csv ← 40 个 UI 品类推理规则
+│   └── stacks/          ← React / shadcn 栈指南
+│
+├── novita/              ← Novita AI 专属（绿 #23D57C）
+│   ├── sidebar.csv      ← 111 行，Home/Model APIs/GPUs/Sandbox 4 种菜单
+│   ├── header.csv       ← 36 行，Console 顶部导航
+│   ├── design-system.csv ← 225 行（自动生成，勿手动编辑）
+│   └── tokens/novita.tokens.json ← 源头：100+ 原语 + 组合 + 交互态
+│
+└── ppio/                ← PPIO Cloud 专属（蓝 #1161fe，骨架待补充）
+```
+
+### 新增工具链
+| 工具 | 命令 | 用途 |
+|------|------|------|
+| **搜索引擎** | `python3 search.py "query" --product novita --domain sidebar` | BM25 全文搜索 14 个域 |
+| **设计系统生成** | `python3 search.py "query" --product novita --design-system` | 5 域并行 + 推理规则 |
+| **Token 验证** | `python3 validate_tokens.py --product novita` | 4 层验证（结构/引用/状态/CSS） |
+| **Token 同步** | `python3 sync_tokens.py --product novita --all` | JSON → CSV → SKILL.md |
+
+### 关键约束
+- **design-system.csv 是自动生成的**，修改源头是 `novita.tokens.json`
+- **sidebar.csv 包含 Figma 节点 ID**，用于截图交叉验证
+- **三路同步**：`data/` → `src/ppio-ui-skill/data/` → `cli/assets/data/`
 
 ---
 
